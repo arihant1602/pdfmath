@@ -1,5 +1,5 @@
 {
-  "name": "pdfmath",
+  "name": "@awryhant/pdfmath",
   "version": "0.1.0",
   "description": "PDF arithmetic from the command line and as an MCP server: merge, cut, slice (Python-style), rotate and compress PDFs, with a Python-like scripting language (.pm). Fully offline.",
   "keywords": [

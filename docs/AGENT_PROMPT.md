@@ -11,7 +11,7 @@ Install the pdfmath command-line tool (command name: pdfm) on this machine, veri
 
 1. Check whether it is already installed by running `pdfm --version`. If it prints a version, skip to step 4.
 2. Install it:
-   a. If npm is available, run `npm install -g pdfmath`.
+   a. If npm is available, run `npm install -g @awryhant/pdfmath`.
    b. If that fails (no npm, package not found, or no prebuilt binary for this platform) and Rust's
       `cargo` is available, run `cargo install --locked --git https://github.com/arihant1602/pdfmath`
       (this needs Rust 1.88 or newer).
@@ -42,7 +42,7 @@ Install the pdfmath command-line tool (command name: pdfm) on this machine, veri
 ## Installing by hand
 
 ```sh
-npm install -g pdfmath                                    # prebuilt binary, no Rust needed
+npm install -g @awryhant/pdfmath                                    # prebuilt binary, no Rust needed
 cargo install --locked --git https://github.com/arihant1602/pdfmath   # build from source
 claude mcp add --scope user pdfmath -- pdfm mcp            # register with Claude Code (see docs/mcp.md for others)
 ```

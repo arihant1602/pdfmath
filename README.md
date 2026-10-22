@@ -15,7 +15,7 @@ pdfm -e 'p1 -- 2mb' -o small.pdf scan.pdf       # compress to <= 2 MiB
 ## Install
 
 ```sh
-npm install -g pdfmath
+npm install -g @awryhant/pdfmath
 # or build from source (Rust 1.88+):
 cargo install --locked --git https://github.com/arihant1602/pdfmath
 ```
@@ -169,7 +169,7 @@ cargo test
 cargo clippy --all-targets -- -D warnings
 ```
 
-npm packaging: `npm/pdfmath` is a small Node launcher. For each platform there is an
+npm packaging: `npm/pdfmath` is a small Node launcher, published as `@awryhant/pdfmath`. For each platform there is an
 optional package (`pdfmath-linux-x64`, `pdfmath-darwin-arm64`, `pdfmath-windows-x64`, …) that
 holds the binary. `.github/workflows/release.yml` builds all of them and publishes them when
 a `v*` tag is pushed. It needs the `NPM_TOKEN` secret.

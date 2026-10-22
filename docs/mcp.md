@@ -8,7 +8,7 @@ edit PDFs through tool calls whenever a task needs it. Everything runs locally a
 
 ## Register it
 
-Install first (`npm install -g pdfmath`, or see the [README](../README.md#install)).
+Install first (`npm install -g @awryhant/pdfmath`, or see the [README](../README.md#install)).
 
 | Client | Command or config |
 |---|---|
@@ -25,7 +25,7 @@ Install first (`npm install -g pdfmath`, or see the [README](../README.md#instal
 }
 ```
 
-If you'd rather not install it globally, use `"command": "npx", "args": ["-y", "pdfmath", "mcp"]`.
+If you'd rather not install it globally, use `"command": "npx", "args": ["-y", "@awryhant/pdfmath", "mcp"]`.
 Restart the client or start a new session after registering.
 
 ## Tools
