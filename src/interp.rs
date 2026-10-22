@@ -30,6 +30,8 @@ pub struct Interp {
     /// When set, program output is collected here instead of going to stdout
     /// (the MCP server uses stdout for the protocol).
     pub capture: Option<String>,
+    /// Side-effect-free mode: builtins that write files or run other code are disabled.
+    pub restricted: bool,
 }
 
 impl Default for Interp {
@@ -40,7 +42,7 @@ impl Default for Interp {
 
 impl Interp {
     pub fn new() -> Self {
-        Interp { globals: HashMap::new(), frames: Vec::new(), capture: None }
+        Interp { globals: HashMap::new(), frames: Vec::new(), capture: None, restricted: false }
     }
 
     /// Write program output (print, info, help).

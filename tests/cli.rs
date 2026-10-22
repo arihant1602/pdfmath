@@ -296,17 +296,26 @@ fn mcp_server_round_trip() {
         r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"pdf_eval","arguments":{"expression":"a + b","inputs":{"a":"a.pdf","b":"b.pdf"},"output":"out.pdf"}}}"#,
         r#"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"pdf_eval","arguments":{"expression":"a","inputs":{"a":"a.pdf"},"output":"a.pdf"}}}"#,
         r#"{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"pdf_script","arguments":{"code":"print(len(open('out.pdf')))\nexit(3)"}}}"#,
+        r#"{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"pdf_eval","arguments":{"expression":"save(a, 'sneaky.pdf')","inputs":{"a":"a.pdf"}}}}"#,
+        r#"{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"pdf_eval","arguments":{"expression":"b","inputs":{"b":"b.pdf"},"output":"out.pdf"}}}"#,
+        r#"{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"pdf_eval","arguments":{"expression":"b","inputs":{"b":"b.pdf"},"output":"out.pdf","overwrite":true}}}"#,
     ];
     child.stdin.take().unwrap().write_all((msgs.join("\n") + "\n").as_bytes()).unwrap();
     let out = String::from_utf8(child.wait_with_output().unwrap().stdout).unwrap();
     let lines: Vec<&str> = out.lines().collect();
-    assert_eq!(lines.len(), 5, "one reply per request, none for the notification:\n{out}");
+    assert_eq!(lines.len(), 8, "one reply per request, none for the notification:\n{out}");
     assert!(lines[0].contains(r#""serverInfo":{"name":"pdfmath""#));
     for tool in ["pdf_info", "pdf_eval", "pdf_script"] {
         assert!(lines[1].contains(&format!(r#""name":"{tool}""#)), "{tool} missing");
     }
     assert!(lines[2].contains(r#""isError":false"#) && lines[2].contains("wrote out.pdf (7 pages"), "{}", lines[2]);
-    assert_eq!(widths(&d.join("out.pdf")), vec![200, 201, 100, 101, 102, 103, 104]);
     assert!(lines[3].contains(r#""isError":true"#) && lines[3].contains("refusing to overwrite"), "{}", lines[3]);
     assert!(lines[4].contains(r#""isError":true"#) && lines[4].contains(r#"7\nexited with code 3"#), "{}", lines[4]);
+    // pdf_eval cannot write files from inside the expression...
+    assert!(lines[5].contains(r#""isError":true"#) && lines[5].contains("save() is not allowed"), "{}", lines[5]);
+    assert!(!d.join("sneaky.pdf").exists());
+    // ...and won't replace an existing file unless told to.
+    assert!(lines[6].contains("refusing to overwrite existing file"), "{}", lines[6]);
+    assert!(lines[7].contains(r#""isError":false"#), "{}", lines[7]);
+    assert_eq!(widths(&d.join("out.pdf")), vec![200, 201]);
 }

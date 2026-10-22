@@ -51,7 +51,8 @@ expression. A failure sets `isError: true`, and the message names the line and c
 
 ## Safety
 
-- **No overwriting by default:** `pdf_eval` refuses to write over one of its own inputs unless `overwrite: true` is passed. Its tool description tells agents to set that only when the user asked.
+- **No overwriting by default:** `pdf_eval` only writes `output`, and refuses if that file already exists (an input or anything else) unless `overwrite: true` is passed. Its tool description tells agents to set that only when the user asked.
+- **No writes from the expression:** `pdf_eval` expressions cannot call `save()`, `run()`, `exit()` or `input()`, so the tool really is non-destructive. Jobs that need several writes go through `pdf_script`, which is marked destructive so clients can ask for confirmation.
 - **`exit()` is contained:** in a script it ends that program only, never the server. `input()` is disabled.
 - **No network:** the server never touches it. It reads and writes only the paths the tools are given (and whatever a script opens or saves).
 

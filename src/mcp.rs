@@ -58,7 +58,8 @@ fn tools() -> Json {
                 Json::str(format!(
                     "Merge, cut, reorder, rotate or compress PDFs with one pdfmath expression and save the result. \
                      Bind input files with `inputs` (e.g. {{\"a\": \"report.pdf\", \"b\": \"appendix.pdf\"}}), then refer to them by name \
-                     in `expression` (e.g. \"a - b[2:]\"). Set `output` to write the resulting PDF. {SEMANTICS} \
+                     in `expression` (e.g. \"a - b[2:]\"). Set `output` to write the resulting PDF; it must be a new file unless \
+                     `overwrite` is true. The expression cannot write files itself (save/run are disabled). {SEMANTICS} \
                      Examples: \"a - b\" (a then b), \"a[::-1]\", \"a + 1 - 1\" (drop first and last page), \"a -- 1mb\", \
                      \"a[0] - rotate(a[1:], 90)\"."
                 )),
@@ -82,7 +83,7 @@ fn tools() -> Json {
                             ("output", described("string", "Where to save the resulting PDF. Omit to just evaluate (e.g. len(a)).")),
                             (
                                 "overwrite",
-                                described("boolean", "Allow `output` to be one of the input files. Only set this if the user asked to overwrite."),
+                                described("boolean", "Allow `output` to replace an existing file (including an input). Only set this if the user asked to overwrite."),
                             ),
                             ("cwd", cwd.clone()),
                         ]),
@@ -90,6 +91,7 @@ fn tools() -> Json {
                     ("required", Json::Arr(vec![Json::str("expression")])),
                 ]),
             ),
+            // Not destructive: without `overwrite` it only ever creates a new file.
             ("annotations", Json::obj(vec![("destructiveHint", Json::Bool(false)), ("openWorldHint", Json::Bool(false))])),
         ]),
         Json::obj(vec![
@@ -237,6 +239,8 @@ fn call_tool(name: &str, args: &Json) -> Result<String, String> {
             in_dir(cwd, || {
                 let mut it = Interp::new();
                 it.capture = Some(String::new());
+                // The expression itself may not write files: the only write is `output`.
+                it.restricted = true;
                 let mut input_paths = Vec::new();
                 if let Some(Json::Obj(inputs)) = args.get("inputs") {
                     for (var, path) in inputs {
@@ -251,10 +255,11 @@ fn call_tool(name: &str, args: &Json) -> Result<String, String> {
                 }
                 if let Some(out) = output
                     && !overwrite
-                    && input_paths.iter().any(|p| same_file(p, out))
+                    && Path::new(out).exists()
                 {
+                    let what = if input_paths.iter().any(|p| same_file(p, out)) { "input file" } else { "existing file" };
                     return Err(format!(
-                        "refusing to overwrite input file '{out}': choose another output path, or set overwrite=true if the user asked for it"
+                        "refusing to overwrite {what} '{out}': choose another output path, or set overwrite=true if the user asked for it"
                     ));
                 }
                 let value = it.run_source(expr).map_err(|e| e.to_string())?;

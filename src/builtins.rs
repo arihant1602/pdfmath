@@ -90,7 +90,15 @@ fn no_more_kwargs(fname: &str, kwargs: &[(String, Value)]) -> Result<()> {
     }
 }
 
+/// Builtins that write files, run other scripts or interact; unavailable when `Interp::restricted`.
+const SIDE_EFFECTS: &[&str] = &["save", "run", "exit", "quit", "input"];
+
 pub fn call(it: &mut Interp, name: &str, args: Vec<Value>, mut kwargs: Vec<(String, Value)>) -> Result<Value> {
+    if it.restricted && SIDE_EFFECTS.contains(&name) {
+        return Err(Error::new(format!(
+            "{name}() is not allowed in an expression here; use the `output` argument to save, or pdf_script for multi-step jobs"
+        )));
+    }
     let kw = &mut kwargs;
     let result = match name {
         "print" => {
