@@ -75,8 +75,8 @@ jobs:
           # Idempotent: skip versions already on npm, retry with backoff (npm rate-limits new packages).
           publish() {
             dir=$1
-            name=$(node -p "require('./$dir/package.json').name")
-            version=$(node -p "require('./$dir/package.json').version")
+            name=$(node -p "require('$dir/package.json').name")
+            version=$(node -p "require('$dir/package.json').version")
             if npm view "$name@$version" version >/dev/null 2>&1; then
               echo "$name@$version already published"
               return 0
@@ -93,11 +93,11 @@ jobs:
           failed=0
           for d in npm/dist/pdfmath-*; do
             chmod +x "$d"/bin/* || true
-            publish "$d" || failed=1
+            publish "./$d" || failed=1
             sleep 20
           done
           if [ "$failed" = 1 ]; then
             echo "::error::some platform packages failed to publish; not publishing the launcher"
             exit 1
           fi
-          publish npm/pdfmath
+          publish ./npm/pdfmath
