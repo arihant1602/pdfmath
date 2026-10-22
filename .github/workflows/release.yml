@@ -71,9 +71,33 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           ./scripts/sync-version.sh
+          cp README.md npm/pdfmath/README.md
+          # Idempotent: skip versions already on npm, retry with backoff (npm rate-limits new packages).
+          publish() {
+            dir=$1
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version already published"
+              return 0
+            fi
+            for attempt in 1 2 3 4; do
+              if npm publish "$dir" --access public; then
+                return 0
+              fi
+              echo "publish of $name failed (attempt $attempt), waiting before retry"
+              sleep $((attempt * 60))
+            done
+            return 1
+          }
+          failed=0
           for d in npm/dist/pdfmath-*; do
             chmod +x "$d"/bin/* || true
-            npm publish "$d" --access public
+            publish "$d" || failed=1
+            sleep 20
           done
-          cp README.md npm/pdfmath/README.md
-          npm publish npm/pdfmath --access public
+          if [ "$failed" = 1 ]; then
+            echo "::error::some platform packages failed to publish; not publishing the launcher"
+            exit 1
+          fi
+          publish npm/pdfmath
