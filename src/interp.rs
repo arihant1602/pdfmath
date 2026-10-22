@@ -27,6 +27,9 @@ struct Frame {
 pub struct Interp {
     pub globals: HashMap<String, Value>,
     frames: Vec<Frame>,
+    /// When set, program output is collected here instead of going to stdout
+    /// (the MCP server uses stdout for the protocol).
+    pub capture: Option<String>,
 }
 
 impl Default for Interp {
@@ -37,7 +40,20 @@ impl Default for Interp {
 
 impl Interp {
     pub fn new() -> Self {
-        Interp { globals: HashMap::new(), frames: Vec::new() }
+        Interp { globals: HashMap::new(), frames: Vec::new(), capture: None }
+    }
+
+    /// Write program output (print, info, help).
+    pub fn write_out(&mut self, s: &str) {
+        match &mut self.capture {
+            Some(buf) => buf.push_str(s),
+            None => {
+                use std::io::Write;
+                let mut out = std::io::stdout().lock();
+                let _ = out.write_all(s.as_bytes());
+                let _ = out.flush();
+            }
+        }
     }
 
     /// Parse and run source text. Returns the value of the last statement when

@@ -3,7 +3,9 @@ mod builtins;
 mod compress;
 mod error;
 mod interp;
+mod json;
 mod lexer;
+mod mcp;
 mod parser;
 mod pdf;
 mod repl;
@@ -28,6 +30,7 @@ USAGE
                                resulting pdf is written to OUT.
   pdfm -i FILE.pm              run a script, then stay in the prompt
   pdfm -                       read a script from stdin
+  pdfm mcp                     run as an MCP server on stdio (for AI agents)
   pdfm --help-lang             language and operator cheat-sheet
 
 EXAMPLES
@@ -75,6 +78,7 @@ fn real_main() -> i32 {
             println!("pdfm {}", env!("CARGO_PKG_VERSION"));
             0
         }
+        "mcp" | "--mcp" => mcp::serve(),
         "-" => {
             set_args(&mut interp, &argv[1..]);
             run_stdin(&mut interp)

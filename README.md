@@ -21,11 +21,24 @@ cargo install --locked --git https://github.com/arihant1602/pdfmath
 npm ships prebuilt binaries for Linux, macOS and Windows on x64 and arm64.
 You don't need Node or Rust at runtime.
 
+### Use it from AI agents (MCP)
+
+`pdfm mcp` is a built-in [MCP](https://modelcontextprotocol.io) server. Once it is registered,
+your agent edits PDFs through tool calls (`pdf_info`, `pdf_eval`, `pdf_script`) whenever a task
+needs it:
+
+```sh
+claude mcp add --scope user pdfmath -- pdfm mcp     # Claude Code
+codex mcp add pdfmath -- pdfm mcp                   # Codex CLI
+```
+
+Setup for Cursor, Claude Desktop, Gemini CLI and other clients is in **[docs/mcp.md](docs/mcp.md)**.
+
 ### Let your AI agent install it
 
 Paste the prompt from **[docs/AGENT_PROMPT.md](docs/AGENT_PROMPT.md)** into Claude Code, Codex,
-Cursor or a similar agent. It installs `pdfm`, checks that it works, and learns the syntax. After
-that you can ask for things like "merge these, drop the cover, and get it under 5 MB".
+Cursor or a similar agent. It installs `pdfm`, registers the MCP server, checks that it works, and
+learns the syntax. After that you can ask for things like "merge these, drop the cover, and get it under 5 MB".
 
 ## Operators
 
@@ -132,7 +145,7 @@ Document-level data (outlines/bookmarks, forms, the structure tree) is not carri
 
 ## For AI agents and scripts
 
-- You don't need a prompt: use `pdfm -e`, `pdfm -c`, `pdfm file.pm` or `echo '...' | pdfm -`.
+- Prefer the MCP server (`pdfm mcp`, see [docs/mcp.md](docs/mcp.md)). Otherwise you don't need a prompt: use `pdfm -e`, `pdfm -c`, `pdfm file.pm` or `echo '...' | pdfm -`.
 - The exit code is 0 on success and 1 on error. `exit(n)` sets it.
 - Errors go to stderr as `origin:line:col: Kind: message`, for example `job.pm:3:9: NameError: name 'x' is not defined`.
 - `-e … -o out.pdf` prints one line: `wrote out.pdf (N pages, SIZE)`.

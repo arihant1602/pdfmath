@@ -20,6 +20,9 @@ const BUILTINS: &[&str] = &[
     "help", "format", "isinstance", "any", "all", "map", "filter", "divmod",
 ];
 
+/// Error message prefix used by `exit(n)` when running embedded.
+pub const EXIT_PREFIX: &str = "SystemExit: ";
+
 pub fn lookup(name: &str) -> Option<&'static str> {
     BUILTINS.iter().copied().find(|b| *b == name)
 }
@@ -94,21 +97,26 @@ pub fn call(it: &mut Interp, name: &str, args: Vec<Value>, mut kwargs: Vec<(Stri
             let sep = arg(&[], kw, 0, "sep").map(|v| v.to_str()).unwrap_or_else(|| " ".into());
             let end = arg(&[], kw, 0, "end").map(|v| v.to_str()).unwrap_or_else(|| "\n".into());
             let line: Vec<String> = args.iter().map(|v| v.to_str()).collect();
-            let mut out = std::io::stdout().lock();
-            let _ = write!(out, "{}{}", line.join(&sep), end);
-            let _ = out.flush();
+            it.write_out(&format!("{}{}", line.join(&sep), end));
             Value::None
         }
         "help" => {
-            print!("{HELP}");
+            it.write_out(HELP);
             Value::None
         }
         "exit" | "quit" => {
             let code = args.first().and_then(|v| v.as_int()).unwrap_or(0);
+            if it.capture.is_some() {
+                // Embedded (MCP): stop the program without killing the server.
+                return Err(Error::new(format!("{EXIT_PREFIX}{code}")));
+            }
             let _ = std::io::stdout().flush();
             std::process::exit(code as i32);
         }
         "input" => {
+            if it.capture.is_some() {
+                return Err(Error::new("input() is not available here (no interactive terminal)"));
+            }
             if let Some(p) = args.first() {
                 print!("{}", p.to_str());
                 let _ = std::io::stdout().flush();
@@ -155,7 +163,7 @@ pub fn call(it: &mut Interp, name: &str, args: Vec<Value>, mut kwargs: Vec<(Stri
         "info" => {
             arity(name, &args, 1, 1)?;
             let p = args[0].expect_pdf("info() argument")?;
-            print!("{}", info(&p));
+            it.write_out(&info(&p));
             Value::None
         }
         "size" => {
@@ -435,7 +443,7 @@ fn rotate(p: &Pdf, deg: i64) -> Result<Value> {
     Ok(Value::pdf(Pdf::from_pages(pages)))
 }
 
-fn info(p: &Pdf) -> String {
+pub fn info(p: &Pdf) -> String {
     let mut s = format!("pages: {}\n", p.len());
     // Runs of consecutive pages from the same source.
     let mut runs: Vec<(String, usize, usize)> = Vec::new();

@@ -277,3 +277,36 @@ fn hostile_image_dimensions_do_not_crash() {
     assert!(!ok);
     assert!(err.contains("cannot compress to"), "{err}");
 }
+
+#[test]
+fn mcp_server_round_trip() {
+    use std::io::Write;
+    let d = setup("mcp");
+    let mut child = Command::new(env!("CARGO_BIN_EXE_pdfm"))
+        .arg("mcp")
+        .current_dir(&d)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    let msgs = [
+        r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{}}}"#,
+        r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#,
+        r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#,
+        r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"pdf_eval","arguments":{"expression":"a + b","inputs":{"a":"a.pdf","b":"b.pdf"},"output":"out.pdf"}}}"#,
+        r#"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"pdf_eval","arguments":{"expression":"a","inputs":{"a":"a.pdf"},"output":"a.pdf"}}}"#,
+        r#"{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"pdf_script","arguments":{"code":"print(len(open('out.pdf')))\nexit(3)"}}}"#,
+    ];
+    child.stdin.take().unwrap().write_all((msgs.join("\n") + "\n").as_bytes()).unwrap();
+    let out = String::from_utf8(child.wait_with_output().unwrap().stdout).unwrap();
+    let lines: Vec<&str> = out.lines().collect();
+    assert_eq!(lines.len(), 5, "one reply per request, none for the notification:\n{out}");
+    assert!(lines[0].contains(r#""serverInfo":{"name":"pdfmath""#));
+    for tool in ["pdf_info", "pdf_eval", "pdf_script"] {
+        assert!(lines[1].contains(&format!(r#""name":"{tool}""#)), "{tool} missing");
+    }
+    assert!(lines[2].contains(r#""isError":false"#) && lines[2].contains("wrote out.pdf (7 pages"), "{}", lines[2]);
+    assert_eq!(widths(&d.join("out.pdf")), vec![200, 201, 100, 101, 102, 103, 104]);
+    assert!(lines[3].contains(r#""isError":true"#) && lines[3].contains("refusing to overwrite"), "{}", lines[3]);
+    assert!(lines[4].contains(r#""isError":true"#) && lines[4].contains(r#"7\nexited with code 3"#), "{}", lines[4]);
+}

@@ -7,7 +7,8 @@ To install `pdfm` on a machine, follow [docs/AGENT_PROMPT.md](docs/AGENT_PROMPT.
 
 ## Using pdfm
 
-- Never use the interactive prompt. Use one of these instead:
+- When the pdfmath MCP tools are loaded, use them: `pdf_info`, `pdf_eval` and `pdf_script` ([docs/mcp.md](docs/mcp.md)).
+- Otherwise use the CLI, and never the interactive prompt. Use one of these instead:
   - `pdfm -e 'EXPR' -o out.pdf in1.pdf in2.pdf` for one expression. The inputs are `p1`, `p2`, …, or a name with `name=path.pdf`.
   - `pdfm -c 'CODE'` for several statements.
   - `pdfm job.pm`, or `pdfm - < job.pm`, for scripts.
@@ -35,6 +36,7 @@ To install `pdfm` on a machine, follow [docs/AGENT_PROMPT.md](docs/AGENT_PROMPT.
   - `src/pdf.rs` is the lazy page model, and `materialize()` copies only the objects that are reachable.
   - `src/compress.rs` implements `--`: lossless steps first, then the JPEG ladder with binary search.
   - `src/slice.rs` implements Python's slice rules.
+  - `src/mcp.rs` is the MCP server, built on the tiny JSON module in `src/json.rs`. Program output is captured through `Interp::capture`, because stdout is the protocol channel.
 - Tests: `tests/cli.rs` builds fixture PDFs whose pages have distinct widths, so page order can be asserted.
 - Releases:
   1. Bump `version` in `Cargo.toml`.
