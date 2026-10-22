@@ -258,3 +258,22 @@ fn stdin_script_and_args() {
     assert!(out.status.success());
     assert_eq!(String::from_utf8_lossy(&out.stdout), "HELLO\n5\n");
 }
+
+#[test]
+fn hostile_image_dimensions_do_not_crash() {
+    let d = tmpdir("hostile");
+    image_fixture(&d.join("img.pdf"), 1);
+    let mut doc = Document::load(d.join("img.pdf")).unwrap();
+    for obj in doc.objects.values_mut() {
+        if let Object::Stream(s) = obj
+            && s.dict.has(b"Width")
+        {
+            s.dict.set("Width", i64::MAX / 2);
+            s.dict.set("Height", -5);
+        }
+    }
+    doc.save(d.join("bad.pdf")).unwrap();
+    let (ok, _, err) = pdfm(&d, &["-e", "p1 -- 10kb", "-o", "o.pdf", "bad.pdf"]);
+    assert!(!ok);
+    assert!(err.contains("cannot compress to"), "{err}");
+}

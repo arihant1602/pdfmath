@@ -14,6 +14,9 @@ use lopdf::{Document, Object, ObjectId};
 use crate::error::{Error, Result};
 use crate::pdf::{Pdf, write_doc};
 
+/// Images above this many pixels are left alone (about 750 MB of RGB).
+const MAX_PIXELS: usize = 1 << 28;
+
 /// From mildest to most aggressive: (scale factor, JPEG quality).
 const LADDER: &[(f32, u8)] = &[
     (1.0, 95),
@@ -197,16 +200,22 @@ fn decode_images(doc: &Document) -> Vec<Image> {
         {
             continue;
         }
-        let num = |k: &[u8]| d.get(k).and_then(|o| o.as_i64()).unwrap_or(0) as usize;
-        let (w, h) = (num(b"Width"), num(b"Height"));
+        let num = |k: &[u8]| d.get(k).ok().and_then(|o| o.as_i64().ok()).and_then(|n| usize::try_from(n).ok());
+        let (Some(w), Some(h)) = (num(b"Width"), num(b"Height")) else { continue };
+        let Some(comps) = color_components(doc, d.get(b"ColorSpace").ok()) else { continue };
+        // Dimensions come from an untrusted file: check before allocating anything.
+        let Some(raw_len) = w.checked_mul(h).filter(|px| *px <= MAX_PIXELS).and_then(|px| px.checked_mul(comps)) else {
+            continue;
+        };
         if w * h < 64 * 64 || s.content.len() < 4096 {
             continue;
         }
-        let Some(comps) = color_components(doc, d.get(b"ColorSpace").ok()) else { continue };
         let filters: Vec<Vec<u8>> = s.filters().map(|f| f.iter().map(|x| x.to_vec()).collect()).unwrap_or_default();
         let pixels = if filters == [b"DCTDecode".to_vec()] {
             let mut dec = jpeg_decoder::Decoder::new(s.content.as_slice());
-            let Ok(px) = dec.decode() else { continue };
+            if dec.read_info().is_err() {
+                continue;
+            }
             let Some(info) = dec.info() else { continue };
             let got = match info.pixel_format {
                 jpeg_decoder::PixelFormat::L8 => 1,
@@ -216,16 +225,21 @@ fn decode_images(doc: &Document) -> Vec<Image> {
             if got != comps || info.width as usize != w || info.height as usize != h {
                 continue;
             }
+            let Ok(px) = dec.decode() else { continue };
+            if px.len() != raw_len {
+                continue;
+            }
             px
         } else if filters.iter().all(|f| f == b"FlateDecode" || f == b"LZWDecode") {
-            if num(b"BitsPerComponent") != 8 {
+            if num(b"BitsPerComponent") != Some(8) {
                 continue;
             }
-            let Ok(px) = s.decompressed_content() else { continue };
-            if px.len() < w * h * comps {
+            // Allow a little slack for row padding, but never inflate past the image size.
+            let Ok(px) = s.decompressed_content_with_limit(raw_len + raw_len / 8 + 1024) else { continue };
+            if px.len() < raw_len {
                 continue;
             }
-            px[..w * h * comps].to_vec()
+            px[..raw_len].to_vec()
         } else {
             continue;
         };
