@@ -41,7 +41,7 @@
     "pdfmath-linux-arm64": "0.1.0",
     "pdfmath-darwin-x64": "0.1.0",
     "pdfmath-darwin-arm64": "0.1.0",
-    "pdfmath-win32-x64": "0.1.0",
-    "pdfmath-win32-arm64": "0.1.0"
+    "pdfmath-windows-x64": "0.1.0",
+    "pdfmath-windows-arm64": "0.1.0"
   }
 }

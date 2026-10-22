@@ -5,7 +5,9 @@
 const { spawnSync } = require("child_process");
 
 const exe = process.platform === "win32" ? "pdfm.exe" : "pdfm";
-const pkg = `pdfmath-${process.platform}-${process.arch}`;
+// Windows packages are named "windows" (npm's spam filter rejects the "win32" names).
+const platformName = process.platform === "win32" ? "windows" : process.platform;
+const pkg = `pdfmath-${platformName}-${process.arch}`;
 
 function findBinary() {
   if (process.env.PDFM_BINARY) return process.env.PDFM_BINARY;

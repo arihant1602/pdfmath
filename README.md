@@ -162,7 +162,7 @@ cargo clippy --all-targets -- -D warnings
 ```
 
 npm packaging: `npm/pdfmath` is a small Node launcher. For each platform there is an
-optional package (`pdfmath-linux-x64`, `pdfmath-darwin-arm64`, `pdfmath-win32-x64`, …) that
+optional package (`pdfmath-linux-x64`, `pdfmath-darwin-arm64`, `pdfmath-windows-x64`, …) that
 holds the binary. `.github/workflows/release.yml` builds all of them and publishes them when
 a `v*` tag is pushed. It needs the `NPM_TOKEN` secret.
 

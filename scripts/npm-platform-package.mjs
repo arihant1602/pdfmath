@@ -12,7 +12,8 @@ if (!platform || !arch || !binary) {
 }
 
 const main = JSON.parse(fs.readFileSync("npm/pdfmath/package.json", "utf8"));
-const name = `pdfmath-${platform}-${arch}`;
+// Windows packages are named "windows" (npm's spam filter rejects the "win32" names); `os` stays win32.
+const name = `pdfmath-${platform === "win32" ? "windows" : platform}-${arch}`;
 const exe = platform === "win32" ? "pdfm.exe" : "pdfm";
 const dir = path.join(outRoot, name);
 fs.mkdirSync(path.join(dir, "bin"), { recursive: true });
