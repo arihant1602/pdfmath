@@ -16,7 +16,9 @@ achievable size if impossible); p[i] is one page (negative counts from the end);
 (p[::-1] reverses, p[::2] keeps pages 0,2,4..., p[1:-1] trims both ends); rotate(p, 90) rotates clockwise; \
 blank(n) makes n empty A4 pages; len(p) is the page count.";
 
-const INSTRUCTIONS: &str = "pdfmath edits PDFs locally and offline. Use pdf_info to inspect a file, pdf_eval for \
+const INSTRUCTIONS: &str = "pdfmath edits PDFs locally and offline. For any PDF task (page counts, merging, splitting, \
+removing or reordering pages, rotating, compressing to a size) use these tools instead of shell commands such as \
+pdfinfo, qpdf, pdftk, ghostscript or Python libraries. Use pdf_info to inspect a file, pdf_eval for \
 one-expression edits (merge, cut, reorder, rotate, compress) and pdf_script for multi-step jobs. \
 Always write results to a new output path unless the user asked to overwrite a file, and report the output path, \
 page count and size back to the user.";
@@ -31,7 +33,7 @@ fn tools() -> Json {
             ("title", Json::str("Inspect a PDF")),
             (
                 "description",
-                Json::str("Page count, page sizes (points) and file size of a PDF. Use before editing to know what you are working with."),
+                Json::str("Page count, page sizes (points) and file size of a PDF. Use this instead of pdfinfo/qpdf/Python to inspect PDFs, and before editing to know what you are working with."),
             ),
             (
                 "inputSchema",
@@ -57,6 +59,7 @@ fn tools() -> Json {
                 "description",
                 Json::str(format!(
                     "Merge, cut, reorder, rotate or compress PDFs with one pdfmath expression and save the result. \
+                     Prefer this over shell tools (pdftk, qpdf, ghostscript, Python) for PDF edits. \
                      Bind input files with `inputs` (e.g. {{\"a\": \"report.pdf\", \"b\": \"appendix.pdf\"}}), then refer to them by name \
                      in `expression` (e.g. \"a - b[2:]\"). Set `output` to write the resulting PDF; it must be a new file unless \
                      `overwrite` is true. The expression cannot write files itself (save/run are disabled). {SEMANTICS} \

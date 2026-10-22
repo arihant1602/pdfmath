@@ -4,6 +4,8 @@
 on stdio. Any MCP client (Claude Code, Claude Desktop, Codex, Cursor, Gemini CLI, …) can then
 edit PDFs through tool calls whenever a task needs it. Everything runs locally and offline.
 
+![Claude Code editing PDFs through the pdfmath MCP server](images/mcp.png)
+
 ## Register it
 
 Install first (`npm install -g pdfmath`, or see the [README](../README.md#install)).

@@ -4,6 +4,8 @@ PDF arithmetic on the command line. You merge, cut, slice, rotate and compress P
 operators and Python slicing. A Python-like scripting language and an interactive `>>>`
 prompt are included. It is a single static binary that runs fully offline.
 
+![pdfm operators, rendered from real output](docs/images/ops.png)
+
 ```sh
 pdfm -e 'p1 - p2' -o merged.pdf a.pdf b.pdf     # a then b
 pdfm -e 'p1[::-1] - 1' -o out.pdf a.pdf         # reversed, without its last page
@@ -31,6 +33,8 @@ needs it:
 claude mcp add --scope user pdfmath -- pdfm mcp     # Claude Code
 codex mcp add pdfmath -- pdfm mcp                   # Codex CLI
 ```
+
+![Claude Code editing PDFs through the pdfmath MCP server](docs/images/mcp.png)
 
 Setup for Cursor, Claude Desktop, Gemini CLI and other clients is in **[docs/mcp.md](docs/mcp.md)**.
 
@@ -79,6 +83,8 @@ pdfm -                        read a script from stdin
 pdfm --help-lang              language cheat-sheet
 ```
 
+![one-liners](docs/images/cli.png)
+
 ```sh
 pdfm -e 'p1 + p2' -o out.pdf a.pdf b.pdf             # b then a
 pdfm -e 'p1[::-1]' -o reversed.pdf a.pdf
@@ -89,6 +95,8 @@ pdfm -e 'len(p1)' a.pdf                              # prints 12
 ```
 
 ## Interactive prompt
+
+![the >>> prompt](docs/images/repl.png)
 
 ```
 >>> a = open("report.pdf")
