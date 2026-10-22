@@ -1,0 +1,4 @@
+/target
+/npm/dist
+/npm/pdfmath/README.md
+*.pdf

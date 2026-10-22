@@ -1,0 +1,79 @@
+# Build pdfm for every platform and publish to npm when a tag like v0.1.0 is pushed.
+# Requires the repository secret NPM_TOKEN (an npm automation token).
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal && rustup default stable
+      - run: cargo test --release
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl, platform: linux, arch: x64, musl: true }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-musl, platform: linux, arch: arm64, musl: true }
+          - { os: macos-latest, target: x86_64-apple-darwin, platform: darwin, arch: x64 }
+          - { os: macos-latest, target: aarch64-apple-darwin, platform: darwin, arch: arm64 }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, platform: win32, arch: x64 }
+          - { os: windows-latest, target: aarch64-pc-windows-msvc, platform: win32, arch: arm64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add ${{ matrix.target }}
+      - if: matrix.musl
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: cargo build --release --target ${{ matrix.target }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - shell: bash
+        run: |
+          exe=pdfm; [ "${{ matrix.platform }}" = win32 ] && exe=pdfm.exe
+          node scripts/npm-platform-package.mjs ${{ matrix.platform }} ${{ matrix.arch }} target/${{ matrix.target }}/release/$exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdfmath-${{ matrix.platform }}-${{ matrix.arch }}
+          path: npm/dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          path: npm/dist
+          merge-multiple: true
+      - name: Publish platform packages, then the launcher
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          ./scripts/sync-version.sh
+          for d in npm/dist/pdfmath-*; do
+            chmod +x "$d"/bin/* || true
+            npm publish "$d" --access public
+          done
+          cp README.md npm/pdfmath/README.md
+          npm publish npm/pdfmath --access public

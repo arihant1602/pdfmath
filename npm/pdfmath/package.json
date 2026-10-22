@@ -1,0 +1,43 @@
+{
+  "name": "pdfmath",
+  "version": "0.1.0",
+  "description": "PDF arithmetic from the command line: merge, cut, slice (Python-style), rotate and compress PDFs, with a Python-like scripting language (.pm). Fully offline.",
+  "keywords": [
+    "pdf",
+    "merge",
+    "split",
+    "slice",
+    "compress",
+    "cli",
+    "repl",
+    "scripting",
+    "offline"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arihant1602/pdfmath.git"
+  },
+  "homepage": "https://github.com/arihant1602/pdfmath#readme",
+  "bugs": {
+    "url": "https://github.com/arihant1602/pdfmath/issues"
+  },
+  "bin": {
+    "pdfm": "bin/pdfm.js"
+  },
+  "files": [
+    "bin/pdfm.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "optionalDependencies": {
+    "pdfmath-linux-x64": "0.1.0",
+    "pdfmath-linux-arm64": "0.1.0",
+    "pdfmath-darwin-x64": "0.1.0",
+    "pdfmath-darwin-arm64": "0.1.0",
+    "pdfmath-win32-x64": "0.1.0",
+    "pdfmath-win32-arm64": "0.1.0"
+  }
+}
